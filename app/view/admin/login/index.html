@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录 - 小说阅读网管理后台</title>
+    <link rel="stylesheet" href="/static/admin/css/login.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-bg">
+            <div class="bg-shape shape-1"></div>
+            <div class="bg-shape shape-2"></div>
+            <div class="bg-shape shape-3"></div>
+        </div>
+        
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <span class="logo-icon">📚</span>
+                    <span class="logo-text">小说阅读网</span>
+                </div>
+                <h1 class="login-title">管理后台</h1>
+                <p class="login-subtitle">请输入管理员账号</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="label-icon">👤</span>
+                        用户名
+                    </label>
+                    <input type="text" name="username" class="form-input" placeholder="请输入用户名" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="label-icon">🔐</span>
+                        密码
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input type="password" name="password" class="form-input" id="passwordInput" placeholder="请输入密码" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" id="togglePassword" title="显示密码">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" name="remember" value="1">
+                        <span class="checkmark"></span>
+                        <span>记住我</span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
+                    <span class="btn-text">登 录</span>
+                    <span class="btn-loading" style="display: none;">登录中...</span>
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>默认账号：admin / admin123</p>
+                <p>← <a href="/">返回前台</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const passwordInput = document.getElementById('passwordInput');
+            const togglePassword = document.getElementById('togglePassword');
+            const loginBtn = document.getElementById('loginBtn');
+
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '🙈';
+            });
+
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const btnText = loginBtn.querySelector('.btn-text');
+                const btnLoading = loginBtn.querySelector('.btn-loading');
+                
+                btnText.style.display = 'none';
+                btnLoading.style.display = 'inline';
+                loginBtn.disabled = true;
+
+                const formData = new FormData(loginForm);
+
+                fetch('/admin/login', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    btnText.style.display = 'inline';
+                    btnLoading.style.display = 'none';
+                    loginBtn.disabled = false;
+
+                    alert(result.msg);
+                    if (result.code === 200 && result.url) {
+                        window.location.href = result.url;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    btnText.style.display = 'inline';
+                    btnLoading.style.display = 'none';
+                    loginBtn.disabled = false;
+                    alert('登录失败，请稍后重试');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

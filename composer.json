@@ -1,0 +1,18 @@
+{
+    "name": "novel/reading",
+    "description": "小说阅读网站",
+    "type": "project",
+    "require": {
+        "php": ">=7.2.5",
+        "topthink/framework": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "app\\": "app/",
+            "extend\\": "extend/"
+        }
+    },
+    "config": {
+        "preferred-install": "dist"
+    }
+}

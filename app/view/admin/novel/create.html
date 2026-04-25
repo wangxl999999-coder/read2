@@ -1,0 +1,121 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}添加小说 - 管理后台{/block}
+{block name="page_title"}添加小说{/block}
+
+{block name="content"}
+<div class="form-card">
+    <form id="novelForm" class="admin-form">
+        <div class="form-row">
+            <div class="form-col col-8">
+                <div class="form-group">
+                    <label class="form-label">小说名称 <span class="required">*</span></label>
+                    <input type="text" name="title" class="form-input" placeholder="请输入小说名称" required>
+                </div>
+            </div>
+            <div class="form-col col-4">
+                <div class="form-group">
+                    <label class="form-label">作者 <span class="required">*</span></label>
+                    <input type="text" name="author" class="form-input" placeholder="请输入作者名称" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-col col-6">
+                <div class="form-group">
+                    <label class="form-label">分类 <span class="required">*</span></label>
+                    <select name="category_id" class="form-select" required>
+                        <option value="">请选择分类</option>
+                        {volist name="categories" id="cat"}
+                        <option value="{$cat.id}">{$cat.name}</option>
+                        {/volist}
+                    </select>
+                </div>
+            </div>
+            <div class="form-col col-6">
+                <div class="form-group">
+                    <label class="form-label">状态</label>
+                    <select name="status" class="form-select">
+                        <option value="1">连载中</option>
+                        <option value="0">已完结</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">封面图片</label>
+            <div class="image-upload">
+                <div class="upload-preview" id="coverPreview">
+                    <img src="/static/images/default-cover.png" alt="封面预览" id="coverImage">
+                </div>
+                <div class="upload-input">
+                    <input type="hidden" name="cover" id="coverInput">
+                    <p class="upload-hint">支持 JPG、PNG 格式，建议尺寸 300×400 像素</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">简介</label>
+            <textarea name="description" class="form-textarea" placeholder="请输入小说简介" rows="6"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-col col-6">
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" name="is_recommend" value="1">
+                        <span class="checkmark"></span>
+                        <span>推荐小说</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-col col-6">
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" name="is_top" value="1">
+                        <span class="checkmark"></span>
+                        <span>置顶展示</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/novel/index" class="btn btn-outline btn-lg">取消</a>
+            <button type="submit" class="btn btn-primary btn-lg">保存小说</button>
+        </div>
+    </form>
+</div>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const novelForm = document.getElementById('novelForm');
+    
+    novelForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('/admin/novel/create', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.msg);
+            if (result.code === 200 && result.url) {
+                window.location.href = result.url;
+            }
+        });
+    });
+});
+</script>
+{/block}

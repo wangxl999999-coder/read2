@@ -1,0 +1,143 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}用户管理 - 管理后台{/block}
+{block name="page_title"}用户管理{/block}
+
+{block name="content"}
+<!-- 筛选区域 -->
+<div class="filter-bar">
+    <form action="/admin/user/index" method="get" class="filter-form">
+        <div class="filter-group">
+            <label>搜索：</label>
+            <input type="text" name="keyword" class="form-input" placeholder="用户名/昵称/邮箱" value="{$keyword}">
+        </div>
+        <div class="filter-group">
+            <label>状态：</label>
+            <select name="status" class="form-select">
+                <option value="-1" {if $status == -1}selected{/if}>全部状态</option>
+                <option value="1" {if $status == 1}selected{/if}>正常</option>
+                <option value="0" {if $status == 0}selected{/if}>禁用</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">筛选</button>
+        <a href="/admin/user/index" class="btn btn-outline">重置</a>
+    </form>
+</div>
+
+<!-- 用户列表 -->
+<div class="data-card">
+    <table class="data-table striped">
+        <thead>
+            <tr>
+                <th style="width: 80px;">ID</th>
+                <th style="width: 200px;">用户信息</th>
+                <th style="width: 150px;">邮箱</th>
+                <th style="width: 80px;">书架</th>
+                <th style="width: 80px;">收藏</th>
+                <th style="width: 80px;">帖子</th>
+                <th style="width: 80px;">状态</th>
+                <th style="width: 180px;">最后登录</th>
+                <th style="width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {volist name="users" id="user"}
+            <tr>
+                <td>{$user.id}</td>
+                <td>
+                    <div class="user-info-cell">
+                        <img src="{$user.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="user-avatar">
+                        <div class="user-info">
+                            <p class="user-nickname">{$user.nickname}</p>
+                            <p class="user-username">@{$user.username}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>{$user.email|default='-'}</td>
+                <td>{$user.bookshelves_count}</td>
+                <td>{$user.favorites_count}</td>
+                <td>{$user.posts_count}</td>
+                <td>
+                    <button class="toggle-status-btn" data-id="{$user.id}" data-status="{$user.status}">
+                        <span class="status-tag {$user.status == 1 ? 'active' : 'inactive'}">
+                            {$user.status_text}
+                        </span>
+                    </button>
+                </td>
+                <td>
+                    {if $user.last_login_time}
+                    <p>{$user.last_login_time}</p>
+                    <p class="text-muted">IP: {$user.last_login_ip}</p>
+                    {else}
+                    <span class="text-muted">未登录过</span>
+                    {/if}
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="/admin/user/detail?id={$user.id}" class="btn btn-sm btn-outline">
+                            📊 详情
+                        </a>
+                        <a href="/admin/user/edit?id={$user.id}" class="btn btn-sm btn-outline">
+                            ✏️ 编辑
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {/volist}
+        </tbody>
+    </table>
+</div>
+
+<!-- 分页 -->
+{if $users->hasPages()}
+<div class="pagination-wrapper">
+    <div class="pagination">
+        {if $users->currentPage() > 1}
+        <a href="?{$users->getOptions()['query']|http_build_query}&page={$users->currentPage()-1}" class="page-link">上一页</a>
+        {/if}
+        
+        {for start="1" end="$users->lastPage()"}
+        <a href="?{$users->getOptions()['query']|http_build_query}&page={$i}" class="page-link {if $i == $users->currentPage()}active{/if}">
+            {$i}
+        </a>
+        {/for}
+        
+        {if $users->currentPage() < $users->lastPage()}
+        <a href="?{$users->getOptions()['query']|http_build_query}&page={$users->currentPage()+1}" class="page-link">下一页</a>
+        {/if}
+        
+        <span class="page-info">共 {$users->total()} 条记录</span>
+    </div>
+</div>
+{/if}
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtns = document.querySelectorAll('.toggle-status-btn');
+    
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.id;
+            
+            fetch('/admin/user/toggleStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + userId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
+{/block}

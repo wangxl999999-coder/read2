@@ -1,0 +1,109 @@
+{extend name="layout/base" /}
+
+{block name="title"}我的书架 - 小说阅读网{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/bookshelf.css">
+{/block}
+
+{block name="content"}
+<section class="bookshelf-section">
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1 class="page-title">我的书架</h1>
+            <div class="header-actions">
+                <div class="sort-options">
+                    <span class="sort-label">排序：</span>
+                    <select id="sortSelect" class="sort-select">
+                        <option value="sort" {if $sortField == 'sort'}selected{/if}>自定义排序</option>
+                        <option value="last_read_time" {if $sortField == 'last_read_time'}selected{/if}>最近阅读</option>
+                        <option value="read_progress" {if $sortField == 'read_progress'}selected{/if}>阅读进度</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="editModeBtn">
+                    <span class="btn-icon">✏️</span>
+                    <span id="editModeText">管理</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 书架内容 -->
+        {if count($books) > 0}
+        <div class="bookshelf-grid" id="bookshelfGrid">
+            {volist name="books" id="book"}
+            <div class="book-card" data-novel-id="{$book.novel_id}" data-sort="{$book.sort}">
+                <div class="book-checkbox">
+                    <input type="checkbox" class="book-check" data-novel-id="{$book.novel_id}">
+                </div>
+                <a href="/reader?novel_id={$book.novel_id}{if $book.last_read_chapter_id}&chapter_id={$book.last_read_chapter_id}{/if}" class="book-cover">
+                    <img src="{$book.novel.cover|default='/static/images/default-cover.png'}" alt="{$book.novel.title}">
+                    <div class="book-progress">
+                        <div class="progress-bar" style="width: {$book.read_progress}%"></div>
+                        <span class="progress-text">{$book.read_progress}%</span>
+                    </div>
+                    {if $book.is_offline}
+                    <div class="offline-badge">已离线</div>
+                    {/if}
+                </a>
+                <div class="book-info">
+                    <h3 class="book-title">
+                        <a href="/novel/detail?id={$book.novel_id}">{$book.novel.title}</a>
+                    </h3>
+                    <p class="book-author">{$book.novel.author}</p>
+                    <p class="book-status">
+                        {if $book.lastReadChapter}
+                        读到：第{$book.lastReadChapter.sort}章
+                        {else}
+                        未开始阅读
+                        {/if}
+                    </p>
+                    {if $book.last_read_time}
+                    <p class="book-time">最后阅读：{$book.last_read_time}</p>
+                    {/if}
+                </div>
+                <div class="book-actions">
+                    {if !$book.is_offline}
+                    <button class="action-btn download-btn" data-novel-id="{$book.novel_id}" title="下载">
+                        ⬇️
+                    </button>
+                    {/if}
+                    <button class="action-btn remove-btn" data-novel-id="{$book.novel_id}" title="移出书架">
+                        🗑️
+                    </button>
+                </div>
+                <div class="sort-handle" title="拖动排序">⋮⋮</div>
+            </div>
+            {/volist}
+        </div>
+
+        <!-- 编辑模式工具栏 -->
+        <div class="edit-toolbar" id="editToolbar">
+            <div class="toolbar-left">
+                <label class="select-all">
+                    <input type="checkbox" id="selectAllBooks">
+                    <span>全选</span>
+                </label>
+                <span class="selected-count" id="selectedCount">已选择 0 项</span>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn btn-danger" id="batchRemoveBtn">批量删除</button>
+                <button class="btn btn-outline" id="cancelEditBtn">取消</button>
+            </div>
+        </div>
+        {else}
+        <!-- 空书架提示 -->
+        <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <h3 class="empty-title">书架为空</h3>
+            <p class="empty-desc">快去探索发现喜欢的小说吧！</p>
+            <a href="/" class="btn btn-primary btn-lg">去发现</a>
+        </div>
+        {/if}
+    </div>
+</section>
+{/block}
+
+{block name="js"}
+<script src="/static/js/bookshelf.js"></script>
+{/block}

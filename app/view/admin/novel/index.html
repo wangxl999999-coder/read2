@@ -1,0 +1,154 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}小说管理 - 管理后台{/block}
+{block name="page_title"}小说管理{/block}
+
+{block name="content"}
+<!-- 筛选区域 -->
+<div class="filter-bar">
+    <form action="/admin/novel/index" method="get" class="filter-form">
+        <div class="filter-group">
+            <label>分类：</label>
+            <select name="category_id" class="form-select">
+                <option value="">全部分类</option>
+                {volist name="categories" id="cat"}
+                <option value="{$cat.id}" {if $categoryId == $cat.id}selected{/if}>{$cat.name}</option>
+                {/volist}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>状态：</label>
+            <select name="status" class="form-select">
+                <option value="-1" {if $status == -1}selected{/if}>全部状态</option>
+                <option value="1" {if $status == 1}selected{/if}>连载中</option>
+                <option value="0" {if $status == 0}selected{/if}>已完结</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>搜索：</label>
+            <input type="text" name="keyword" class="form-input" placeholder="小说名称/作者" value="{$keyword}">
+        </div>
+        <button type="submit" class="btn btn-primary">筛选</button>
+        <a href="/admin/novel/index" class="btn btn-outline">重置</a>
+    </form>
+    <a href="/admin/novel/create" class="btn btn-primary">
+        <span>➕</span> 添加小说
+    </a>
+</div>
+
+<!-- 数据表格 -->
+<div class="data-card">
+    <table class="data-table striped">
+        <thead>
+            <tr>
+                <th style="width: 50px;">ID</th>
+                <th style="width: 200px;">小说信息</th>
+                <th style="width: 100px;">作者</th>
+                <th style="width: 80px;">分类</th>
+                <th style="width: 100px;">字数</th>
+                <th style="width: 80px;">章节</th>
+                <th style="width: 80px;">阅读</th>
+                <th style="width: 80px;">状态</th>
+                <th style="width: 180px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {volist name="novels" id="novel"}
+            <tr>
+                <td>{$novel.id}</td>
+                <td>
+                    <div class="novel-info-cell">
+                        <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}">
+                        <div class="novel-info">
+                            <p class="novel-title">{$novel.title}</p>
+                            {if $novel.is_top}<span class="tag tag-warning">置顶</span>{/if}
+                            {if $novel.is_recommend}<span class="tag tag-success">推荐</span>{/if}
+                        </div>
+                    </div>
+                </td>
+                <td>{$novel.author}</td>
+                <td>{$novel.category.name}</td>
+                <td>{$novel.word_count|number_format}</td>
+                <td>{$novel.chapter_count}</td>
+                <td>{$novel.view_count|number_format}</td>
+                <td>
+                    <span class="status-tag {$novel.status == 1 ? 'active' : 'inactive'}">
+                        {$novel.status_text}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="/admin/novel/chapters?novel_id={$novel.id}" class="btn btn-sm btn-outline" title="章节管理">
+                            📖 章节
+                        </a>
+                        <a href="/admin/novel/edit?id={$novel.id}" class="btn btn-sm btn-outline" title="编辑">
+                            ✏️ 编辑
+                        </a>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="{$novel.id}" title="删除">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {/volist}
+        </tbody>
+    </table>
+</div>
+
+<!-- 分页 -->
+{if $novels->hasPages()}
+<div class="pagination-wrapper">
+    <div class="pagination">
+        {if $novels->currentPage() > 1}
+        <a href="?{$novels->getOptions()['query']|http_build_query}&page={$novels->currentPage()-1}" class="page-link">上一页</a>
+        {/if}
+        
+        {for start="1" end="$novels->lastPage()"}
+        <a href="?{$novels->getOptions()['query']|http_build_query}&page={$i}" class="page-link {if $i == $novels->currentPage()}active{/if}">
+            {$i}
+        </a>
+        {/for}
+        
+        {if $novels->currentPage() < $novels->lastPage()}
+        <a href="?{$novels->getOptions()['query']|http_build_query}&page={$novels->currentPage()+1}" class="page-link">下一页</a>
+        {/if}
+        
+        <span class="page-info">共 {$novels->total()} 条记录</span>
+    </div>
+</div>
+{/if}
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const novelId = this.dataset.id;
+            
+            if (!confirm('确定要删除这本小说吗？删除后无法恢复！')) {
+                return;
+            }
+            
+            fetch('/admin/novel/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + novelId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
+{/block}

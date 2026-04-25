@@ -1,0 +1,116 @@
+{extend name="layout/base" /}
+
+{block name="title"}目录 - {$novel.title} - 小说阅读网{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/novel.css">
+{/block}
+
+{block name="content"}
+<section class="chapters-section">
+    <div class="container">
+        <!-- 小说信息 -->
+        <div class="novel-breadcrumb">
+            <a href="/">首页</a> >
+            <a href="/category?id={$novel.category_id}">{$novel.category.name}</a> >
+            <a href="/novel/detail?id={$novel.id}">{$novel.title}</a> >
+            <span>目录</span>
+        </div>
+
+        <div class="chapters-header">
+            <div class="chapters-novel-info">
+                <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}" class="chapters-cover">
+                <div class="chapters-info">
+                    <h1 class="chapters-title">{$novel.title}</h1>
+                    <p class="chapters-author">作者：{$novel.author}</p>
+                    <div class="chapters-meta">
+                        <span>{$novel.status_text}</span>
+                        <span>共 {$novel.chapter_count} 章</span>
+                        <span>{$novel.word_count|number_format} 字</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chapters-actions">
+                <a href="/novel/detail?id={$novel.id}" class="btn btn-outline">返回详情</a>
+                <a href="/reader?novel_id={$novel.id}" class="btn btn-primary">开始阅读</a>
+            </div>
+        </div>
+
+        <!-- 排序和筛选 -->
+        <div class="chapters-toolbar">
+            <div class="toolbar-left">
+                <span>共 {$chapters->total()} 章</span>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn btn-sm btn-outline" id="toggleSort">
+                    <span id="sortIcon">↓</span>
+                    <span id="sortText">倒序</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 章节列表 -->
+        <div class="chapters-list" id="chaptersList">
+            {volist name="chapters" id="chapter"}
+            <a href="/reader?novel_id={$novel.id}&chapter_id={$chapter.id}" class="chapter-item">
+                <span class="chapter-num">第{$chapter.sort}章</span>
+                <span class="chapter-title">{$chapter.title}</span>
+                <span class="chapter-meta">
+                    {if $chapter.is_vip}<span class="vip-tag">VIP</span>{/if}
+                    <span class="chapter-words">{$chapter.word_count} 字</span>
+                </span>
+            </a>
+            {/volist}
+        </div>
+
+        <!-- 分页 -->
+        {if $chapters->hasPages()}
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                {if $chapters->currentPage() > 1}
+                <a href="?id={$novel.id}&page={$chapters->currentPage()-1}" class="page-link">上一页</a>
+                {/if}
+                
+                {for start="1" end="$chapters->lastPage()"}
+                <a href="?id={$novel.id}&page={$i}" class="page-link {if $i == $chapters->currentPage()}active{/if}">
+                    {$i}
+                </a>
+                {/for}
+                
+                {if $chapters->currentPage() < $chapters->lastPage()}
+                <a href="?id={$novel.id}&page={$chapters->currentPage()+1}" class="page-link">下一页</a>
+                {/if}
+            </div>
+        </div>
+        {/if}
+    </div>
+</section>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleSortBtn = document.getElementById('toggleSort');
+    const chaptersList = document.getElementById('chaptersList');
+    let isAsc = true;
+
+    toggleSortBtn.addEventListener('click', function() {
+        isAsc = !isAsc;
+        const sortIcon = document.getElementById('sortIcon');
+        const sortText = document.getElementById('sortText');
+        
+        sortIcon.textContent = isAsc ? '↑' : '↓';
+        sortText.textContent = isAsc ? '正序' : '倒序';
+
+        const items = Array.from(chaptersList.querySelectorAll('.chapter-item'));
+        items.sort((a, b) => {
+            const aNum = parseInt(a.querySelector('.chapter-num').textContent.replace(/[^\d]/g, ''));
+            const bNum = parseInt(b.querySelector('.chapter-num').textContent.replace(/[^\d]/g, ''));
+            return isAsc ? aNum - bNum : bNum - aNum;
+        });
+
+        items.forEach(item => chaptersList.appendChild(item));
+    });
+});
+</script>
+{/block}

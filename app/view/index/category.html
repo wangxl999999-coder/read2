@@ -1,0 +1,96 @@
+{extend name="layout/base" /}
+
+{block name="title"}
+{if $currentCategory}
+{$currentCategory.name} - 小说阅读网
+{else}
+小说分类 - 小说阅读网
+{/if}
+{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/novel.css">
+{/block}
+
+{block name="content"}
+<section class="category-section-page">
+    <div class="container">
+        <!-- 分类筛选 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">分类：</span>
+                <div class="filter-options">
+                    <a href="/category" class="filter-option {if !$currentCategory}active{/if}">全部</a>
+                    {volist name="categories" id="cat"}
+                    <a href="/category?id={$cat.id}" class="filter-option {if $currentCategory && $currentCategory.id == $cat.id}active{/if}">
+                        {$cat.name}
+                    </a>
+                    {/volist}
+                </div>
+            </div>
+        </div>
+
+        <!-- 当前分类标题 -->
+        <div class="section-header">
+            <h2 class="section-title">
+                {if $currentCategory}
+                {$currentCategory.name}
+                {else}
+                全部小说
+                {/if}
+            </h2>
+            <p class="section-desc">共 {$novels->total()} 部小说</p>
+        </div>
+
+        <!-- 小说列表 -->
+        <div class="novel-list">
+            {volist name="novels" id="novel"}
+            <div class="novel-item">
+                <a href="/novel/detail?id={$novel.id}" class="novel-item-cover">
+                    <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}">
+                    <span class="novel-item-status">{$novel.status_text}</span>
+                </a>
+                <div class="novel-item-info">
+                    <h3 class="novel-item-title">
+                        <a href="/novel/detail?id={$novel.id}">{$novel.title}</a>
+                    </h3>
+                    <p class="novel-item-author">作者：{$novel.author}</p>
+                    <p class="novel-item-desc">{$novel.description|mb_substr=0,80,'utf-8'}...</p>
+                    <div class="novel-item-meta">
+                        <span class="meta-tag">{$novel.category.name}</span>
+                        <span class="meta-info">📖 {$novel.word_count|number_format} 字</span>
+                        <span class="meta-info">👁 {$novel.view_count|number_format} 阅读</span>
+                        <span class="meta-info">❤️ {$novel.favorite_count} 收藏</span>
+                    </div>
+                    <div class="novel-item-actions">
+                        <a href="/reader?novel_id={$novel.id}" class="btn btn-primary btn-sm">开始阅读</a>
+                        <a href="/novel/chapters?id={$novel.id}" class="btn btn-outline btn-sm">查看目录</a>
+                    </div>
+                </div>
+            </div>
+            {/volist}
+        </div>
+
+        <!-- 分页 -->
+        {if $novels->hasPages()}
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                {if $novels->currentPage() > 1}
+                <a href="?{$novels->getOptions()['query']|http_build_query}&page={$novels->currentPage()-1}" class="page-link">上一页</a>
+                {/if}
+                
+                {for start="1" end="$novels->lastPage()"}
+                <a href="?{$novels->getOptions()['query']|http_build_query}&page={$i}" class="page-link {if $i == $novels->currentPage()}active{/if}">
+                    {$i}
+                </a>
+                {/for}
+                
+                {if $novels->currentPage() < $novels->lastPage()}
+                <a href="?{$novels->getOptions()['query']|http_build_query}&page={$novels->currentPage()+1}" class="page-link">下一页</a>
+                {/if}
+            </div>
+        </div>
+        {/if}
+    </div>
+</section>
+{/block}

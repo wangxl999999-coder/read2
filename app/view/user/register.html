@@ -1,0 +1,101 @@
+{extend name="layout/base" /}
+
+{block name="title"}用户注册 - 小说阅读网{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/auth.css">
+{/block}
+
+{block name="content"}
+<section class="auth-section">
+    <div class="container">
+        <div class="auth-wrapper">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h2 class="auth-title">用户注册</h2>
+                    <p class="auth-subtitle">加入我们，开启阅读之旅</p>
+                </div>
+                
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">用户名 <span class="required">*</span></label>
+                        <input type="text" name="username" class="form-input" placeholder="3-20个字符，字母数字下划线" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">昵称</label>
+                        <input type="text" name="nickname" class="form-input" placeholder="显示在网站上的昵称">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" name="email" class="form-input" placeholder="用于找回密码">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">密码 <span class="required">*</span></label>
+                        <input type="password" name="password" class="form-input" placeholder="至少6个字符" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">确认密码 <span class="required">*</span></label>
+                        <input type="password" name="confirm_password" class="form-input" placeholder="再次输入密码" required>
+                    </div>
+                    
+                    <div class="form-group form-actions">
+                        <label class="form-check">
+                            <input type="checkbox" name="agreement" value="1" required>
+                            <span>我已阅读并同意 <a href="javascript:;">用户协议</a> 和 <a href="javascript:;">隐私政策</a></span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">注册</button>
+                </form>
+                
+                <div class="auth-footer">
+                    <p>已有账号？<a href="/user/login" class="auth-link">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const registerForm = document.getElementById('registerForm');
+    
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(registerForm);
+        
+        fetch('/user/register', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert(result.msg);
+                if (result.url) {
+                    window.location.href = result.url;
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                alert(result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('注册失败，请稍后重试');
+        });
+    });
+});
+</script>
+{/block}

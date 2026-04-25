@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="专业小说阅读网站-在线沉浸式阅读体验">
+    <meta name="keywords" content="小说,阅读,电子书,在线阅读">
+    <title>{block name="title"}小说阅读网{/block}</title>
+    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    {block name="css"}{/block}
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="site-header">
+        <div class="container">
+            <div class="header-wrapper">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-icon">📚</span>
+                        <span class="logo-text">小说阅读网</span>
+                    </a>
+                </div>
+                
+                <!-- 移动端菜单按钮 -->
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- 导航菜单 -->
+                <nav class="main-nav" id="mainNav">
+                    <ul class="nav-list">
+                        <li class="nav-item"><a href="/" class="nav-link {if $Request.controller == 'Index'}active{/if}">首页</a></li>
+                        <li class="nav-item">
+                            <a href="javascript:;" class="nav-link">分类</a>
+                            <ul class="sub-menu">
+                                {volist name="categories" id="cat"}
+                                <li><a href="/category?id={$cat.id}">{$cat.name}</a></li>
+                                {/volist}
+                            </ul>
+                        </li>
+                        <li class="nav-item"><a href="/circle" class="nav-link {if $Request.controller == 'Circle'}active{/if}">书友圈</a></li>
+                        {if $isLogin}
+                        <li class="nav-item"><a href="/bookshelf" class="nav-link {if $Request.controller == 'Bookshelf'}active{/if}">书架</a></li>
+                        <li class="nav-item"><a href="/favorite" class="nav-link {if $Request.controller == 'Favorite'}active{/if}">收藏</a></li>
+                        {/if}
+                    </ul>
+                </nav>
+                
+                <!-- 搜索框 -->
+                <div class="header-search">
+                    <form action="/search" method="get">
+                        <div class="search-box">
+                            <input type="text" name="keyword" placeholder="搜索小说、作者..." class="search-input">
+                            <button type="submit" class="search-btn">🔍</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 用户中心 -->
+                <div class="header-user">
+                    {if $isLogin}
+                    <div class="user-dropdown">
+                        <button class="user-btn">
+                            <img src="{$user.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="user-avatar">
+                            <span class="user-name">{$user.nickname}</span>
+                        </button>
+                        <ul class="user-menu">
+                            <li><a href="/user/profile">个人中心</a></li>
+                            <li><a href="/bookshelf">我的书架</a></li>
+                            <li><a href="/favorite">我的收藏</a></li>
+                            <li class="divider"></li>
+                            <li><a href="/user/logout">退出登录</a></li>
+                        </ul>
+                    </div>
+                    {else}
+                    <div class="guest-actions">
+                        <a href="/user/login" class="btn btn-outline">登录</a>
+                        <a href="/user/register" class="btn btn-primary">注册</a>
+                    </div>
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主内容区 -->
+    <main class="main-content">
+        {block name="content"}{/block}
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-wrapper">
+                <div class="footer-col">
+                    <h3>关于我们</h3>
+                    <p>小说阅读网致力于为读者提供最优质的在线阅读体验，汇集海量精品小说资源。</p>
+                </div>
+                <div class="footer-col">
+                    <h3>快捷导航</h3>
+                    <ul class="footer-links">
+                        <li><a href="/">首页</a></li>
+                        <li><a href="/circle">书友圈</a></li>
+                        <li><a href="/bookshelf">我的书架</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>联系我们</h3>
+                    <p>邮箱：support@novel.com</p>
+                    <p>工作时间：9:00 - 18:00</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 小说阅读网 版权所有</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="backToTop" title="返回顶部">↑</button>
+    
+    <script src="/static/js/common.js"></script>
+    {block name="js"}{/block}
+</body>
+</html>

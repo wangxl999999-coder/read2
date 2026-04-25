@@ -1,0 +1,331 @@
+{extend name="layout/base" /}
+
+{block name="title"}个人中心 - 小说阅读网{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/profile.css">
+{/block}
+
+{block name="content"}
+<section class="profile-section">
+    <div class="container">
+        <div class="profile-wrapper">
+            <!-- 侧边栏 -->
+            <aside class="profile-sidebar">
+                <div class="user-card">
+                    <div class="user-avatar-large">
+                        <img src="{$user.avatar|default='/static/images/default-avatar.png'}" alt="头像">
+                    </div>
+                    <h3 class="user-name">{$userInfo.nickname}</h3>
+                    <p class="user-username">@{$userInfo.username}</p>
+                </div>
+                
+                <nav class="sidebar-nav">
+                    <ul class="nav-list">
+                        <li class="nav-item active">
+                            <a href="javascript:;" class="nav-link">
+                                <span class="nav-icon">📊</span>
+                                <span>阅读统计</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/bookshelf" class="nav-link">
+                                <span class="nav-icon">📚</span>
+                                <span>我的书架</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/favorite" class="nav-link">
+                                <span class="nav-icon">❤️</span>
+                                <span>我的收藏</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="javascript:;" class="nav-link" id="editProfileBtn">
+                                <span class="nav-icon">⚙️</span>
+                                <span>编辑资料</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="javascript:;" class="nav-link" id="changePasswordBtn">
+                                <span class="nav-icon">🔐</span>
+                                <span>修改密码</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+            
+            <!-- 主内容 -->
+            <main class="profile-main">
+                <!-- 阅读统计概览 -->
+                <div class="stats-overview">
+                    <h2 class="section-heading">阅读统计</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-info">
+                                <p class="stat-label">总阅读时长</p>
+                                <p class="stat-value" id="totalReadingTime">{$stats.total_reading_seconds}</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📖</div>
+                            <div class="stat-info">
+                                <p class="stat-label">已读书籍</p>
+                                <p class="stat-value">{$stats.total_books_read} 本</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📚</div>
+                            <div class="stat-info">
+                                <p class="stat-label">正在阅读</p>
+                                <p class="stat-value">{$stats.reading_books_count} 本</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <p class="stat-label">已读完</p>
+                                <p class="stat-value">{$stats.finished_books_count} 本</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 今日/本周阅读 -->
+                <div class="reading-summary">
+                    <div class="summary-card">
+                        <h3 class="summary-title">今日阅读</h3>
+                        <p class="summary-value" id="todayReadingTime">{$todayReading}</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3 class="summary-title">本周阅读</h3>
+                        <p class="summary-value" id="weekReadingTime">{$weekReading}</p>
+                    </div>
+                </div>
+                
+                <!-- 阅读趋势图表 -->
+                <div class="chart-section">
+                    <h3 class="section-heading">近7天阅读趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="readingChart"></canvas>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</section>
+
+<!-- 编辑资料弹窗 -->
+<div class="modal" id="editProfileModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>编辑资料</h3>
+            <button class="modal-close" id="closeEditModal">&times;</button>
+        </div>
+        <form id="editProfileForm">
+            <div class="form-group">
+                <label class="form-label">昵称</label>
+                <input type="text" name="nickname" class="form-input" value="{$userInfo.nickname}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">邮箱</label>
+                <input type="email" name="email" class="form-input" value="{$userInfo.email}">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelEdit">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="modal" id="changePasswordModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>修改密码</h3>
+            <button class="modal-close" id="closePasswordModal">&times;</button>
+        </div>
+        <form id="changePasswordForm">
+            <div class="form-group">
+                <label class="form-label">原密码</label>
+                <input type="password" name="old_password" class="form-input" placeholder="请输入原密码">
+            </div>
+            <div class="form-group">
+                <label class="form-label">新密码</label>
+                <input type="password" name="new_password" class="form-input" placeholder="请输入新密码">
+            </div>
+            <div class="form-group">
+                <label class="form-label">确认新密码</label>
+                <input type="password" name="confirm_password" class="form-input" placeholder="请再次输入新密码">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelPassword">取消</button>
+                <button type="submit" class="btn btn-primary">确认修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + '秒';
+        if (seconds < 3600) return Math.floor(seconds / 60) + '分钟';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return hours + '小时' + minutes + '分钟';
+    }
+
+    const totalReading = parseInt(document.getElementById('totalReadingTime').textContent);
+    document.getElementById('totalReadingTime').textContent = formatDuration(totalReading);
+
+    const todayReading = parseInt(document.getElementById('todayReadingTime').textContent);
+    document.getElementById('todayReadingTime').textContent = formatDuration(todayReading);
+
+    const weekReading = parseInt(document.getElementById('weekReadingTime').textContent);
+    document.getElementById('weekReadingTime').textContent = formatDuration(weekReading);
+
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const editProfileModal = document.getElementById('editProfileModal');
+    const closeEditModal = document.getElementById('closeEditModal');
+    const cancelEdit = document.getElementById('cancelEdit');
+    const editProfileForm = document.getElementById('editProfileForm');
+
+    editProfileBtn.addEventListener('click', () => {
+        editProfileModal.classList.add('active');
+    });
+
+    closeEditModal.addEventListener('click', () => {
+        editProfileModal.classList.remove('active');
+    });
+
+    cancelEdit.addEventListener('click', () => {
+        editProfileModal.classList.remove('active');
+    });
+
+    editProfileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('/user/update', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.msg);
+            if (result.code === 200) {
+                window.location.reload();
+            }
+        });
+    });
+
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    const changePasswordModal = document.getElementById('changePasswordModal');
+    const closePasswordModal = document.getElementById('closePasswordModal');
+    const cancelPassword = document.getElementById('cancelPassword');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+
+    changePasswordBtn.addEventListener('click', () => {
+        changePasswordModal.classList.add('active');
+    });
+
+    closePasswordModal.addEventListener('click', () => {
+        changePasswordModal.classList.remove('active');
+    });
+
+    cancelPassword.addEventListener('click', () => {
+        changePasswordModal.classList.remove('active');
+    });
+
+    changePasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('/user/updatePassword', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.msg);
+            if (result.code === 200) {
+                changePasswordModal.classList.remove('active');
+                this.reset();
+            }
+        });
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === editProfileModal) {
+            editProfileModal.classList.remove('active');
+        }
+        if (e.target === changePasswordModal) {
+            changePasswordModal.classList.remove('active');
+        }
+    });
+
+    const dailyStats = {$dailyStats|json_encode};
+    const dates = [];
+    const durations = [];
+    
+    for (const [date, seconds] of Object.entries(dailyStats)) {
+        dates.push(date.slice(5));
+        durations.push(Math.round(seconds / 60));
+    }
+
+    const canvas = document.getElementById('readingChart');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const maxVal = Math.max(...durations, 60);
+        const barWidth = canvas.width / (dates.length * 2);
+        const padding = 40;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = padding + (canvas.height - padding * 2) * (i / 4);
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(canvas.width - padding, y);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(Math.round(maxVal * (1 - i/4)) + '分', padding - 5, y + 4);
+        }
+        
+        dates.forEach((date, i) => {
+            const x = padding + barWidth + i * barWidth * 2;
+            const barHeight = (durations[i] / maxVal) * (canvas.height - padding * 2);
+            const y = canvas.height - padding - barHeight;
+            
+            const gradient = ctx.createLinearGradient(0, y, 0, canvas.height - padding);
+            gradient.addColorStop(0, '#4a90d9');
+            gradient.addColorStop(1, '#7bb8f4');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - barWidth/2, y, barWidth * 0.8, barHeight);
+            
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText(date, x, canvas.height - padding + 20);
+        });
+    }
+});
+</script>
+{/block}
