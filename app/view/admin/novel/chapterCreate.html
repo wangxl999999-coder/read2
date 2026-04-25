@@ -1,0 +1,88 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}添加章节 - 管理后台{/block}
+{block name="page_title"}添加章节 - {$novel.title}{/block}
+
+{block name="content"}
+<div class="form-card">
+    <form id="chapterForm" class="admin-form">
+        <div class="form-row">
+            <div class="form-col col-8">
+                <div class="form-group">
+                    <label class="form-label">章节标题 <span class="required">*</span></label>
+                    <input type="text" name="title" class="form-input" placeholder="请输入章节标题" required>
+                </div>
+            </div>
+            <div class="form-col col-4">
+                <div class="form-row">
+                    <div class="form-col col-6">
+                        <div class="form-group">
+                            <label class="form-label">章节序号</label>
+                            <input type="number" name="sort" class="form-input" value="{$maxSort}" min="1">
+                        </div>
+                    </div>
+                    <div class="form-col col-6">
+                        <div class="form-group">
+                            <label class="form-label">VIP章节</label>
+                            <select name="is_vip" class="form-select">
+                                <option value="0">免费</option>
+                                <option value="1">VIP</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">章节内容 <span class="required">*</span></label>
+            <textarea name="content" id="chapterContent" class="form-textarea large" placeholder="请输入章节内容" rows="20" required></textarea>
+            <p class="form-hint">
+                字数统计：<span id="wordCount">0</span> 字
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/novel/chapters?novel_id={$novel.id}" class="btn btn-outline btn-lg">取消</a>
+            <button type="submit" class="btn btn-primary btn-lg">保存章节</button>
+        </div>
+    </form>
+</div>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chapterForm = document.getElementById('chapterForm');
+    const chapterContent = document.getElementById('chapterContent');
+    const wordCount = document.getElementById('wordCount');
+
+    chapterContent.addEventListener('input', function() {
+        const text = this.value.replace(/\s/g, '');
+        wordCount.textContent = text.length;
+    });
+
+    chapterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        formData.append('novel_id', '{$novel.id}');
+        
+        fetch('/admin/novel/chapterCreate?novel_id={$novel.id}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.msg);
+            if (result.code === 200 && result.url) {
+                window.location.href = result.url;
+            }
+        });
+    });
+});
+</script>
+{/block}

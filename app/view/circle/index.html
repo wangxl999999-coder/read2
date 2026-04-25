@@ -1,0 +1,210 @@
+{extend name="layout/base" /}
+
+{block name="title"}
+{if $novel}
+{$novel.title} - 书友圈 - 小说阅读网
+{else}
+书友圈 - 小说阅读网
+{/if}
+{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/circle.css">
+{/block}
+
+{block name="content"}
+<section class="circle-section">
+    <div class="container">
+        <div class="circle-wrapper">
+            <!-- 主内容区 -->
+            <main class="circle-main">
+                <!-- 帖子列表头部 -->
+                <div class="posts-header">
+                    {if $novel}
+                    <div class="posts-filter">
+                        <h2 class="filter-title">
+                            <a href="/circle">全部帖子</a>
+                            <span class="separator">›</span>
+                            <a href="/novel/detail?id={$novel.id}">{$novel.title}</a>
+                            <span class="separator">›</span>
+                            <span>讨论区</span>
+                        </h2>
+                    </div>
+                    {else}
+                    <h2 class="posts-title">书友圈</h2>
+                    {/if}
+                    
+                    {if $isLogin}
+                    <a href="/circle/post" class="btn btn-primary">
+                        <span class="btn-icon">✏️</span>
+                        发帖
+                    </a>
+                    {/if}
+                </div>
+
+                <!-- 帖子列表 -->
+                {if count($posts) > 0}
+                <div class="posts-list">
+                    {volist name="posts" id="post"}
+                    <article class="post-card">
+                        <div class="post-header">
+                            <a href="/user/profile" class="post-author">
+                                <img src="{$post.user.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="author-avatar">
+                                <span class="author-name">{$post.user.nickname}</span>
+                            </a>
+                            {if $post.is_top}
+                            <span class="post-tag top-tag">置顶</span>
+                            {/if}
+                            <span class="post-time">{$post.created_at}</span>
+                        </div>
+                        
+                        <div class="post-body">
+                            {if $post.novel}
+                            <div class="post-novel-link">
+                                <a href="/circle?novel_id={$post.novel.id}" class="novel-tag">
+                                    📚 {$post.novel.title}
+                                </a>
+                            </div>
+                            {/if}
+                            
+                            <h3 class="post-title">
+                                <a href="/circle/detail?id={$post.id}">{$post.title}</a>
+                            </h3>
+                            
+                            <p class="post-excerpt">
+                                {$post.content|strip_tags|mb_substr=0,150,'utf-8'}...
+                            </p>
+                            
+                            {if $post.images && count($post.images) > 0}
+                            <div class="post-images">
+                                {volist name="post.images" id="img" length="3"}
+                                <img src="{$img}" alt="图片" class="post-image">
+                                {/volist}
+                                {if count($post.images) > 3}
+                                <div class="post-more-images">
+                                    <span>+{count($post.images)-3}</span>
+                                </div>
+                                {/if}
+                            </div>
+                            {/if}
+                        </div>
+                        
+                        <div class="post-footer">
+                            <div class="post-stats">
+                                <span class="stat-item">
+                                    <span class="stat-icon">👁</span>
+                                    <span class="stat-value">{$post.view_count}</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-icon">❤️</span>
+                                    <span class="stat-value">{$post.like_count}</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-icon">💬</span>
+                                    <span class="stat-value">{$post.comment_count}</span>
+                                </span>
+                            </div>
+                            <a href="/circle/detail?id={$post.id}" class="view-detail">查看详情 →</a>
+                        </div>
+                    </article>
+                    {/volist}
+                </div>
+
+                <!-- 分页 -->
+                {if $posts->hasPages()}
+                <div class="pagination-wrapper">
+                    <div class="pagination">
+                        {if $posts->currentPage() > 1}
+                        <a href="?{$posts->getOptions()['query']|http_build_query}&page={$posts->currentPage()-1}" class="page-link">上一页</a>
+                        {/if}
+                        
+                        {for start="1" end="$posts->lastPage()"}
+                        <a href="?{$posts->getOptions()['query']|http_build_query}&page={$i}" class="page-link {if $i == $posts->currentPage()}active{/if}">
+                            {$i}
+                        </a>
+                        {/for}
+                        
+                        {if $posts->currentPage() < $posts->lastPage()}
+                        <a href="?{$posts->getOptions()['query']|http_build_query}&page={$posts->currentPage()+1}" class="page-link">下一页</a>
+                        {/if}
+                    </div>
+                </div>
+                {/if}
+                {else}
+                <!-- 空状态 -->
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <h3 class="empty-title">暂无帖子</h3>
+                    <p class="empty-desc">快来发布第一篇帖子吧！</p>
+                    {if $isLogin}
+                    <a href="/circle/post" class="btn btn-primary">去发帖</a>
+                    {/if}
+                </div>
+                {/if}
+            </main>
+
+            <!-- 侧边栏 -->
+            <aside class="circle-sidebar">
+                <!-- 发帖入口 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">参与讨论</h3>
+                    {if $isLogin}
+                    <a href="/circle/post" class="btn btn-primary btn-block">发布新帖子</a>
+                    {else}
+                    <p class="login-tip">登录后可以参与讨论</p>
+                    <div class="login-actions">
+                        <a href="/user/login" class="btn btn-outline btn-sm">登录</a>
+                        <a href="/user/register" class="btn btn-primary btn-sm">注册</a>
+                    </div>
+                    {/if}
+                </div>
+
+                <!-- 热门帖子 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">热门帖子</h3>
+                    <div class="hot-posts">
+                        {volist name="posts" id="post" length="5"}
+                        <a href="/circle/detail?id={$post.id}" class="hot-post-item">
+                            <span class="hot-rank">{$i}</span>
+                            <span class="hot-title">{$post.title|mb_substr=0,20,'utf-8'}...</span>
+                        </a>
+                        {/volist}
+                    </div>
+                </div>
+
+                <!-- 热门小说讨论 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">热门小说讨论</h3>
+                    <div class="hot-novels">
+                        {volist name="categories" id="cat" length="6"}
+                        <a href="/category?id={$cat.id}" class="hot-novel-tag">
+                            {$cat.name}
+                        </a>
+                        {/volist}
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 卡片点击事件
+    const postCards = document.querySelectorAll('.post-card');
+    postCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' || e.target.tagName === 'IMG') {
+                return;
+            }
+            const link = this.querySelector('.post-title a');
+            if (link) {
+                window.location.href = link.href;
+            }
+        });
+    });
+});
+</script>
+{/block}

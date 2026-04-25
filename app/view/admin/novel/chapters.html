@@ -1,0 +1,136 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}章节管理 - 管理后台{/block}
+{block name="page_title"}章节管理 - {$novel.title}{/block}
+
+{block name="content"}
+<!-- 返回按钮和操作 -->
+<div class="page-actions">
+    <a href="/admin/novel/index" class="btn btn-outline">← 返回小说列表</a>
+    <a href="/admin/novel/chapterCreate?novel_id={$novel.id}" class="btn btn-primary">
+        <span>➕</span> 添加章节
+    </a>
+</div>
+
+<!-- 小说信息 -->
+<div class="info-card">
+    <div class="info-content">
+        <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}" class="info-cover">
+        <div class="info-detail">
+            <h3 class="info-title">{$novel.title}</h3>
+            <p class="info-meta">
+                <span>作者：{$novel.author}</span>
+                <span>分类：{$novel.category.name}</span>
+                <span>章节数：{$novel.chapter_count}</span>
+                <span>总字数：{$novel.word_count|number_format}</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- 章节列表 -->
+<div class="data-card">
+    <table class="data-table striped">
+        <thead>
+            <tr>
+                <th style="width: 80px;">序号</th>
+                <th style="width: 300px;">章节标题</th>
+                <th style="width: 100px;">字数</th>
+                <th style="width: 80px;">VIP</th>
+                <th style="width: 150px;">创建时间</th>
+                <th style="width: 150px;">更新时间</th>
+                <th style="width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {volist name="chapters" id="chapter"}
+            <tr>
+                <td>第 {$chapter.sort} 章</td>
+                <td>
+                    <div class="chapter-title-cell">
+                        <span class="chapter-title">{$chapter.title}</span>
+                    </div>
+                </td>
+                <td>{$chapter.word_count|number_format}</td>
+                <td>
+                    {if $chapter.is_vip}
+                    <span class="tag tag-danger">VIP</span>
+                    {else}
+                    <span class="tag tag-secondary">免费</span>
+                    {/if}
+                </td>
+                <td>{$chapter.created_at}</td>
+                <td>{$chapter.updated_at}</td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="/admin/novel/chapterEdit?id={$chapter.id}" class="btn btn-sm btn-outline">
+                            ✏️ 编辑
+                        </a>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="{$chapter.id}" title="删除">
+                            🗑️
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {/volist}
+        </tbody>
+    </table>
+</div>
+
+<!-- 分页 -->
+{if $chapters->hasPages()}
+<div class="pagination-wrapper">
+    <div class="pagination">
+        {if $chapters->currentPage() > 1}
+        <a href="?novel_id={$novel.id}&page={$chapters->currentPage()-1}" class="page-link">上一页</a>
+        {/if}
+        
+        {for start="1" end="$chapters->lastPage()"}
+        <a href="?novel_id={$novel.id}&page={$i}" class="page-link {if $i == $chapters->currentPage()}active{/if}">
+            {$i}
+        </a>
+        {/for}
+        
+        {if $chapters->currentPage() < $chapters->lastPage()}
+        <a href="?novel_id={$novel.id}&page={$chapters->currentPage()+1}" class="page-link">下一页</a>
+        {/if}
+        
+        <span class="page-info">共 {$chapters->total()} 章</span>
+    </div>
+</div>
+{/if}
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const chapterId = this.dataset.id;
+            
+            if (!confirm('确定要删除这个章节吗？删除后无法恢复！')) {
+                return;
+            }
+            
+            fetch('/admin/novel/chapterDelete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + chapterId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
+{/block}

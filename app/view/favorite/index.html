@@ -1,0 +1,99 @@
+{extend name="layout/base" /}
+
+{block name="title"}我的收藏 - 小说阅读网{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/favorite.css">
+{/block}
+
+{block name="content"}
+<section class="favorite-section">
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1 class="page-title">我的收藏</h1>
+            <div class="header-info">
+                共 {$favorites|count} 本收藏
+            </div>
+        </div>
+
+        <!-- 收藏列表 -->
+        {if count($favorites) > 0}
+        <div class="favorite-list">
+            {volist name="favorites" id="fav"}
+            <div class="favorite-item" data-novel-id="{$fav.novel_id}">
+                <a href="/novel/detail?id={$fav.novel_id}" class="favorite-cover">
+                    <img src="{$fav.novel.cover|default='/static/images/default-cover.png'}" alt="{$fav.novel.title}">
+                </a>
+                <div class="favorite-info">
+                    <h3 class="favorite-title">
+                        <a href="/novel/detail?id={$fav.novel_id}">{$fav.novel.title}</a>
+                    </h3>
+                    <p class="favorite-author">作者：{$fav.novel.author}</p>
+                    <p class="favorite-desc">{$fav.novel.description|mb_substr=0,60,'utf-8'}...</p>
+                    <div class="favorite-meta">
+                        <span class="meta-tag">{$fav.novel.category.name}</span>
+                        <span class="meta-info">📖 {$fav.novel.word_count|number_format} 字</span>
+                        <span class="meta-info">👁 {$fav.novel.view_count|number_format} 阅读</span>
+                        <span class="meta-info">{$fav.novel.status_text}</span>
+                    </div>
+                    <div class="favorite-actions">
+                        <a href="/reader?novel_id={$fav.novel_id}" class="btn btn-primary btn-sm">开始阅读</a>
+                        <button class="btn btn-outline btn-sm remove-favorite" data-novel-id="{$fav.novel_id}">
+                            取消收藏
+                        </button>
+                    </div>
+                </div>
+                <div class="favorite-time">
+                    <p>收藏于</p>
+                    <p class="time-text">{$fav.created_at}</p>
+                </div>
+            </div>
+            {/volist}
+        </div>
+        {else}
+        <!-- 空收藏提示 -->
+        <div class="empty-state">
+            <div class="empty-icon">❤️</div>
+            <h3 class="empty-title">还没有收藏</h3>
+            <p class="empty-desc">看到喜欢的小说就收藏起来吧！</p>
+            <a href="/" class="btn btn-primary btn-lg">去发现</a>
+        </div>
+        {/if}
+    </div>
+</section>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const removeBtns = document.querySelectorAll('.remove-favorite');
+    
+    removeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const novelId = this.dataset.novelId;
+            
+            if (!confirm('确定要取消收藏吗？')) {
+                return;
+            }
+            
+            fetch('/favorite/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'novel_id=' + novelId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
+{/block}

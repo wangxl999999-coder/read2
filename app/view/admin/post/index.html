@@ -1,0 +1,173 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}帖子管理 - 管理后台{/block}
+{block name="page_title"}帖子管理{/block}
+
+{block name="content"}
+<!-- 筛选区域 -->
+<div class="filter-bar">
+    <form action="/admin/post/index" method="get" class="filter-form">
+        <div class="filter-group">
+            <label>搜索：</label>
+            <input type="text" name="keyword" class="form-input" placeholder="帖子标题/内容" value="{$keyword}">
+        </div>
+        <div class="filter-group">
+            <label>状态：</label>
+            <select name="status" class="form-select">
+                <option value="-1" {if $status == -1}selected{/if}>全部状态</option>
+                <option value="1" {if $status == 1}selected{/if}>正常</option>
+                <option value="0" {if $status == 0}selected{/if}>已隐藏</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">筛选</button>
+        <a href="/admin/post/index" class="btn btn-outline">重置</a>
+    </form>
+</div>
+
+<!-- 帖子列表 -->
+<div class="data-card">
+    <table class="data-table striped">
+        <thead>
+            <tr>
+                <th style="width: 80px;">ID</th>
+                <th style="width: 300px;">帖子内容</th>
+                <th style="width: 100px;">发布者</th>
+                <th style="width: 80px;">点赞</th>
+                <th style="width: 80px;">评论</th>
+                <th style="width: 80px;">状态</th>
+                <th style="width: 150px;">发布时间</th>
+                <th style="width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {volist name="posts" id="post"}
+            <tr>
+                <td>{$post.id}</td>
+                <td>
+                    <div class="post-cell">
+                        {if $post.images}
+                        <div class="post-images">
+                            {php}$images = json_decode($post['images'], true);{/php}
+                            {volist name="images" id="img" length="3"}
+                            <img src="{$img}" alt="图片">
+                            {/volist}
+                        </div>
+                        {/if}
+                        <div class="post-info">
+                            <p class="post-title">{$post.title}</p>
+                            <p class="post-preview">{$post.content|mb_substr=0,60,'utf-8'}...</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="user-mini">
+                        <img src="{$post.user.avatar|default='/static/images/default-avatar.png'}" alt="头像">
+                        <span>{$post.user.nickname}</span>
+                    </div>
+                </td>
+                <td>{$post.likes_count}</td>
+                <td>{$post.comments_count}</td>
+                <td>
+                    <button class="toggle-status-btn" data-id="{$post.id}" data-status="{$post.status}">
+                        <span class="status-tag {$post.status == 1 ? 'active' : 'inactive'}">
+                            {$post.status_text}
+                        </span>
+                    </button>
+                </td>
+                <td>{$post.created_at}</td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="/circle/detail?id={$post.id}" target="_blank" class="btn btn-sm btn-outline" title="查看">
+                            👁️ 查看
+                        </a>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="{$post.id}" title="删除">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {/volist}
+        </tbody>
+    </table>
+</div>
+
+<!-- 分页 -->
+{if $posts->hasPages()}
+<div class="pagination-wrapper">
+    <div class="pagination">
+        {if $posts->currentPage() > 1}
+        <a href="?{$posts->getOptions()['query']|http_build_query}&page={$posts->currentPage()-1}" class="page-link">上一页</a>
+        {/if}
+        
+        {for start="1" end="$posts->lastPage()"}
+        <a href="?{$posts->getOptions()['query']|http_build_query}&page={$i}" class="page-link {if $i == $posts->currentPage()}active{/if}">
+            {$i}
+        </a>
+        {/for}
+        
+        {if $posts->currentPage() < $posts->lastPage()}
+        <a href="?{$posts->getOptions()['query']|http_build_query}&page={$posts->currentPage()+1}" class="page-link">下一页</a>
+        {/if}
+        
+        <span class="page-info">共 {$posts->total()} 条记录</span>
+    </div>
+</div>
+{/if}
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtns = document.querySelectorAll('.toggle-status-btn');
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const postId = this.dataset.id;
+            
+            fetch('/admin/post/toggleStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + postId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const postId = this.dataset.id;
+            
+            if (!confirm('确定要删除这个帖子吗？删除后无法恢复！')) {
+                return;
+            }
+            
+            fetch('/admin/post/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + postId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+});
+</script>
+{/block}

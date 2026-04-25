@@ -1,0 +1,246 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}用户详情 - 管理后台{/block}
+{block name="page_title"}用户详情{/block}
+
+{block name="content"}
+<div class="detail-wrapper">
+    <!-- 用户信息卡片 -->
+    <div class="info-card">
+        <div class="info-header">
+            <div class="user-avatar-large">
+                <img src="{$user.avatar|default='/static/images/default-avatar.png'}" alt="头像">
+            </div>
+            <div class="user-info">
+                <h2 class="user-name">{$user.nickname}</h2>
+                <p class="user-username">@{$user.username}</p>
+                <div class="user-meta">
+                    <span class="meta-tag">
+                        <span class="status-tag {$user.status == 1 ? 'active' : 'inactive'}">
+                            {$user.status_text}
+                        </span>
+                    </span>
+                    <span>注册时间：{$user.created_at}</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="/admin/user/edit?id={$user.id}" class="btn btn-primary">编辑资料</a>
+                <button class="btn btn-outline reset-password-btn" data-id="{$user.id}">重置密码</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 阅读统计 -->
+    <div class="stats-card">
+        <h3 class="section-title">阅读统计</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <p class="stat-value" id="totalReadingTime">{$stats.total_reading_seconds}</p>
+                <p class="stat-label">总阅读时长</p>
+            </div>
+            <div class="stat-item">
+                <p class="stat-value">{$stats.total_books_read}</p>
+                <p class="stat-label">已读书籍</p>
+            </div>
+            <div class="stat-item">
+                <p class="stat-value">{$stats.reading_books_count}</p>
+                <p class="stat-label">正在阅读</p>
+            </div>
+            <div class="stat-item">
+                <p class="stat-value">{$stats.finished_books_count}</p>
+                <p class="stat-label">已读完</p>
+            </div>
+            <div class="stat-item">
+                <p class="stat-value" id="todayReading">{$todayReading}</p>
+                <p class="stat-label">今日阅读</p>
+            </div>
+            <div class="stat-item">
+                <p class="stat-value" id="weekReading">{$weekReading}</p>
+                <p class="stat-label">本周阅读</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 阅读趋势 -->
+    <div class="chart-card">
+        <h3 class="section-title">近14天阅读趋势</h3>
+        <div class="chart-container">
+            <canvas id="readingChart" width="100%" height="300"></canvas>
+        </div>
+    </div>
+
+    <!-- 基本信息 -->
+    <div class="info-card">
+        <h3 class="section-title">基本信息</h3>
+        <div class="info-grid">
+            <div class="info-row">
+                <span class="info-label">用户ID</span>
+                <span class="info-value">{$user.id}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">用户名</span>
+                <span class="info-value">{$user.username}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">昵称</span>
+                <span class="info-value">{$user.nickname}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">邮箱</span>
+                <span class="info-value">{$user.email|default='未设置'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">最后登录时间</span>
+                <span class="info-value">{$user.last_login_time|default='从未登录'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">最后登录IP</span>
+                <span class="info-value">{$user.last_login_ip|default='-'}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 重置密码弹窗 -->
+<div class="modal" id="resetPasswordModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>重置用户密码</h3>
+            <button class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <form id="resetPasswordForm">
+            <div class="form-group">
+                <label class="form-label">新密码</label>
+                <input type="password" name="new_password" class="form-input" placeholder="请输入新密码（至少6位）" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelReset">取消</button>
+                <button type="submit" class="btn btn-primary">确认重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + '秒';
+        if (seconds < 3600) return Math.floor(seconds / 60) + '分钟';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return hours + '小时' + minutes + '分钟';
+    }
+
+    const totalReadingEl = document.getElementById('totalReadingTime');
+    totalReadingEl.textContent = formatDuration(parseInt(totalReadingEl.textContent));
+
+    const todayReadingEl = document.getElementById('todayReading');
+    todayReadingEl.textContent = formatDuration(parseInt(todayReadingEl.textContent));
+
+    const weekReadingEl = document.getElementById('weekReading');
+    weekReadingEl.textContent = formatDuration(parseInt(weekReadingEl.textContent));
+
+    const resetPasswordBtn = document.querySelector('.reset-password-btn');
+    const resetPasswordModal = document.getElementById('resetPasswordModal');
+    const closeModal = document.getElementById('closeModal');
+    const cancelReset = document.getElementById('cancelReset');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    let currentUserId = null;
+
+    resetPasswordBtn.addEventListener('click', function() {
+        currentUserId = this.dataset.id;
+        resetPasswordModal.classList.add('active');
+    });
+
+    closeModal.addEventListener('click', function() {
+        resetPasswordModal.classList.remove('active');
+    });
+
+    cancelReset.addEventListener('click', function() {
+        resetPasswordModal.classList.remove('active');
+    });
+
+    resetPasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        formData.append('id', currentUserId);
+        
+        fetch('/admin/user/resetPassword', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.msg);
+            if (result.code === 200) {
+                resetPasswordModal.classList.remove('active');
+                resetPasswordForm.reset();
+            }
+        });
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === resetPasswordModal) {
+            resetPasswordModal.classList.remove('active');
+        }
+    });
+
+    const dailyStats = {$dailyStats|json_encode};
+    const dates = [];
+    const durations = [];
+    
+    for (const [date, seconds] of Object.entries(dailyStats)) {
+        dates.push(date.slice(5));
+        durations.push(Math.round(seconds / 60));
+    }
+
+    const canvas = document.getElementById('readingChart');
+    if (canvas && durations.length > 0) {
+        const ctx = canvas.getContext('2d');
+        const maxVal = Math.max(...durations, 60);
+        const barWidth = (canvas.width - 80) / dates.length;
+        const padding = 40;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = padding + (canvas.height - padding * 2) * (i / 4);
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(canvas.width - padding, y);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '12px system-ui';
+            ctx.textAlign = 'right';
+            ctx.fillText(Math.round(maxVal * (1 - i/4)) + '分', padding - 8, y + 4);
+        }
+        
+        dates.forEach((date, i) => {
+            const x = padding + barWidth * i + barWidth / 2;
+            const barHeight = (durations[i] / maxVal) * (canvas.height - padding * 2);
+            const y = canvas.height - padding - barHeight;
+            
+            const gradient = ctx.createLinearGradient(0, y, 0, canvas.height - padding);
+            gradient.addColorStop(0, '#4a90d9');
+            gradient.addColorStop(1, '#7bb8f4');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - barWidth * 0.35, y, barWidth * 0.7, barHeight);
+            
+            ctx.fillStyle = '#374151';
+            ctx.textAlign = 'center';
+            ctx.fillText(date, x, canvas.height - padding + 20);
+        });
+    }
+});
+</script>
+{/block}

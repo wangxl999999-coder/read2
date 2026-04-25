@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <title>{$chapter.title} - {$novel.title} - 小说阅读网</title>
+    <link rel="stylesheet" href="/static/css/reader.css">
+    <style id="readerDynamicStyles">
+        :root {
+            --reader-bg-color: {$readingSettings.bg_color};
+            --reader-text-color: {$readingSettings.text_color};
+            --reader-font-size: {$readingSettings.font_size}px;
+            --reader-line-height: {$readingSettings.line_height};
+            --reader-brightness: {$readingSettings.brightness}%;
+        }
+    </style>
+</head>
+<body id="readerBody">
+    <!-- 阅读区域 -->
+    <div class="reader-container" id="readerContainer">
+        <!-- 顶部导航栏 -->
+        <header class="reader-header" id="readerHeader">
+            <div class="reader-header-left">
+                <button class="reader-btn" id="backBtn" title="返回">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                </button>
+                <div class="reader-title-info">
+                    <h1 class="reader-novel-title">{$novel.title}</h1>
+                    <p class="reader-chapter-title">{$chapter.title}</p>
+                </div>
+            </div>
+            <div class="reader-header-right">
+                <button class="reader-btn" id="tocBtn" title="目录">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                    </svg>
+                </button>
+                <button class="reader-btn" id="settingsBtn" title="设置">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 阅读内容区 -->
+        <main class="reader-content" id="readerContent">
+            <div class="reader-content-inner">
+                <h2 class="chapter-title-display">{$chapter.title}</h2>
+                <div class="chapter-content" id="chapterContent">
+                    {$chapter.content|raw}
+                </div>
+                <div class="chapter-end">
+                    <p>— 本章完 —</p>
+                    {if $prevChapter}
+                    <div class="chapter-nav-info">
+                        <a href="/reader?novel_id={$novel.id}&chapter_id={$prevChapter.id}" class="nav-link">上一章：{$prevChapter.title}</a>
+                    </div>
+                    {/if}
+                    {if $nextChapter}
+                    <div class="chapter-nav-info">
+                        <a href="/reader?novel_id={$novel.id}&chapter_id={$nextChapter.id}" class="nav-link">下一章：{$nextChapter.title}</a>
+                    </div>
+                    {/if}
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部导航 -->
+        <footer class="reader-footer" id="readerFooter">
+            <div class="reader-progress-info">
+                <span class="chapter-info">第 {$chapter.sort} 章 / 共 {$chapters|count} 章</span>
+                <span class="progress-text" id="progressText">阅读进度</span>
+            </div>
+            <div class="reader-progress-bar" id="readerProgressBar">
+                <div class="progress-fill" id="progressFill" style="width: {($chapter.sort / ($chapters|count)) * 100}%"></div>
+            </div>
+            <div class="reader-nav-buttons">
+                {if $prevChapter}
+                <a href="/reader?novel_id={$novel.id}&chapter_id={$prevChapter.id}" class="reader-btn nav-btn" id="prevChapterBtn">
+                    <span class="nav-icon">←</span>
+                    <span>上一章</span>
+                </a>
+                {/if}
+                <button class="reader-btn nav-btn" id="shelfBtn" title="加入书架">
+                    <span class="nav-icon" id="shelfIcon">{if $isInShelf}📚{else}➕{/if}</span>
+                    <span id="shelfText">{if $isInShelf}已在书架{else}加入书架{/if}</span>
+                </button>
+                <button class="reader-btn nav-btn" id="favoriteBtn" title="收藏">
+                    <span class="nav-icon" id="favoriteIcon">{if $isFavorite}❤️{else}🤍{/if}</span>
+                    <span id="favoriteText">{if $isFavorite}已收藏{else}收藏{/if}</span>
+                </button>
+                <button class="reader-btn nav-btn" id="downloadBtn" title="下载">
+                    <span class="nav-icon">⬇️</span>
+                    <span>下载</span>
+                </button>
+                {if $nextChapter}
+                <a href="/reader?novel_id={$novel.id}&chapter_id={$nextChapter.id}" class="reader-btn nav-btn" id="nextChapterBtn">
+                    <span>下一章</span>
+                    <span class="nav-icon">→</span>
+                </a>
+                {/if}
+            </div>
+        </footer>
+    </div>
+
+    <!-- 目录侧边栏 -->
+    <div class="toc-sidebar" id="tocSidebar">
+        <div class="toc-header">
+            <h3>章节目录</h3>
+            <button class="reader-btn" id="closeTocBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="toc-list" id="tocList">
+            {volist name="chapters" id="ch"}
+            <a href="/reader?novel_id={$novel.id}&chapter_id={$ch.id}" class="toc-item {if $ch.id == $chapter.id}active{/if}">
+                <span class="toc-num">第{$ch.sort}章</span>
+                <span class="toc-title">{$ch.title}</span>
+            </a>
+            {/volist}
+        </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h3>阅读设置</h3>
+            <button class="reader-btn" id="closeSettingsBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="settings-content">
+            <!-- 护眼模式 -->
+            <div class="setting-group">
+                <h4 class="setting-label">护眼模式</h4>
+                <div class="setting-options">
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="default" {if $readingSettings.theme == 'default'}checked{/if}>
+                        <span class="theme-preview theme-default"></span>
+                        <span class="theme-name">默认</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="eye" {if $readingSettings.theme == 'eye'}checked{/if}>
+                        <span class="theme-preview theme-eye"></span>
+                        <span class="theme-name">护眼</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="night" {if $readingSettings.theme == 'night'}checked{/if}>
+                        <span class="theme-preview theme-night"></span>
+                        <span class="theme-name">夜间</span>
+                    </label>
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="sepia" {if $readingSettings.theme == 'sepia'}checked{/if}>
+                        <span class="theme-preview theme-sepia"></span>
+                        <span class="theme-name">羊皮纸</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 字体大小 -->
+            <div class="setting-group">
+                <h4 class="setting-label">字体大小</h4>
+                <div class="setting-slider">
+                    <button class="slider-btn" id="fontSizeMinus">-</button>
+                    <input type="range" min="12" max="40" value="{$readingSettings.font_size}" id="fontSizeSlider">
+                    <button class="slider-btn" id="fontSizePlus">+</button>
+                    <span class="slider-value" id="fontSizeValue">{$readingSettings.font_size}px</span>
+                </div>
+            </div>
+
+            <!-- 行间距 -->
+            <div class="setting-group">
+                <h4 class="setting-label">行间距</h4>
+                <div class="setting-slider">
+                    <button class="slider-btn" id="lineHeightMinus">-</button>
+                    <input type="range" min="1.2" max="2.5" step="0.1" value="{$readingSettings.line_height}" id="lineHeightSlider">
+                    <button class="slider-btn" id="lineHeightPlus">+</button>
+                    <span class="slider-value" id="lineHeightValue">{$readingSettings.line_height}</span>
+                </div>
+            </div>
+
+            <!-- 亮度 -->
+            <div class="setting-group">
+                <h4 class="setting-label">亮度</h4>
+                <div class="setting-slider">
+                    <span class="slider-icon">🌙</span>
+                    <input type="range" min="50" max="100" value="{$readingSettings.brightness}" id="brightnessSlider">
+                    <span class="slider-icon">☀️</span>
+                    <span class="slider-value" id="brightnessValue">{$readingSettings.brightness}%</span>
+                </div>
+            </div>
+
+            <!-- 字体选择 -->
+            <div class="setting-group">
+                <h4 class="setting-label">字体选择</h4>
+                <div class="setting-options">
+                    <label class="font-option">
+                        <input type="radio" name="fontFamily" value="system" {if $readingSettings.font_family == 'system'}checked{/if}>
+                        <span style="font-family: system-ui, -apple-system, sans-serif;">系统默认</span>
+                    </label>
+                    <label class="font-option">
+                        <input type="radio" name="fontFamily" value="song" {if $readingSettings.font_family == 'song'}checked{/if}>
+                        <span style="font-family: 'SimSun', 'Songti SC', serif;">宋体</span>
+                    </label>
+                    <label class="font-option">
+                        <input type="radio" name="fontFamily" value="kai" {if $readingSettings.font_family == 'kai'}checked{/if}>
+                        <span style="font-family: 'KaiTi', 'Kaiti SC', cursive;">楷体</span>
+                    </label>
+                    <label class="font-option">
+                        <input type="radio" name="fontFamily" value="hei" {if $readingSettings.font_family == 'hei'}checked{/if}>
+                        <span style="font-family: 'SimHei', 'Microsoft YaHei', sans-serif;">黑体</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 自定义颜色 -->
+            <div class="setting-group">
+                <h4 class="setting-label">自定义颜色</h4>
+                <div class="color-options">
+                    <div class="color-option">
+                        <label>背景色</label>
+                        <input type="color" value="{$readingSettings.bg_color}" id="bgColorPicker">
+                    </div>
+                    <div class="color-option">
+                        <label>文字色</label>
+                        <input type="color" value="{$readingSettings.text_color}" id="textColorPicker">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 保存按钮 -->
+            <div class="setting-actions">
+                <button class="btn btn-primary btn-block" id="saveSettingsBtn">保存设置</button>
+                <button class="btn btn-outline btn-block" id="resetSettingsBtn">恢复默认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div class="overlay" id="overlay"></div>
+
+    <script>
+        const novelId = {$novel.id};
+        const chapterId = {$chapter.id};
+        const isLogin = {if $isLogin}true{else}false{/if};
+        let settings = {$readingSettings|json_encode};
+
+        const themes = {
+            default: { bgColor: '#ffffff', textColor: '#333333' },
+            eye: { bgColor: '#e9f5e9', textColor: '#333333' },
+            night: { bgColor: '#1a1a1a', textColor: '#999999' },
+            sepia: { bgColor: '#f4ecd8', textColor: '#5c5c5c' }
+        };
+
+        const fonts = {
+            system: 'system-ui, -apple-system, "Microsoft YaHei", sans-serif',
+            song: '"SimSun", "Songti SC", serif',
+            kai: '"KaiTi", "Kaiti SC", cursive',
+            hei: '"SimHei", "Microsoft YaHei", sans-serif'
+        };
+    </script>
+    <script src="/static/js/reader.js"></script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+{extend name="admin/layout/base" /}
+
+{block name="title"}评论管理 - 管理后台{/block}
+{block name="page_title"}评论管理{/block}
+
+{block name="content"}
+<!-- 筛选区域 -->
+<div class="filter-bar">
+    <form action="/admin/post/comments" method="get" class="filter-form">
+        <div class="filter-group">
+            <label>搜索：</label>
+            <input type="text" name="keyword" class="form-input" placeholder="评论内容" value="{$keyword}">
+        </div>
+        <div class="filter-group">
+            <label>状态：</label>
+            <select name="status" class="form-select">
+                <option value="-1" {if $status == -1}selected{/if}>全部状态</option>
+                <option value="1" {if $status == 1}selected{/if}>正常</option>
+                <option value="0" {if $status == 0}selected{/if}>已隐藏</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">筛选</button>
+        <a href="/admin/post/comments" class="btn btn-outline">重置</a>
+    </form>
+</div>
+
+<!-- 评论列表 -->
+<div class="data-card">
+    <table class="data-table striped">
+        <thead>
+            <tr>
+                <th style="width: 80px;">ID</th>
+                <th style="width: 120px;">评论者</th>
+                <th style="width: 250px;">评论内容</th>
+                <th style="width: 150px;">原帖</th>
+                <th style="width: 80px;">状态</th>
+                <th style="width: 150px;">评论时间</th>
+                <th style="width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {volist name="comments" id="comment"}
+            <tr>
+                <td>{$comment.id}</td>
+                <td>
+                    <div class="user-mini">
+                        <img src="{$comment.user.avatar|default='/static/images/default-avatar.png'}" alt="头像">
+                        <span>{$comment.user.nickname}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="comment-cell">
+                        {if $comment.parent_id}
+                        <div class="comment-reply">回复 {$comment.parent.user.nickname}：</div>
+                        {/if}
+                        <p class="comment-content">{$comment.content|mb_substr=0,80,'utf-8'}{if mb_strlen($comment.content) > 80}...{/if}</p>
+                    </div>
+                </td>
+                <td>
+                    <div class="post-mini">
+                        <a href="/circle/detail?id={$comment.post.id}" target="_blank" class="post-link">
+                            {$comment.post.title|mb_substr=0,15,'utf-8'}...
+                        </a>
+                    </div>
+                </td>
+                <td>
+                    <button class="toggle-status-btn" data-id="{$comment.id}" data-status="{$comment.status}">
+                        <span class="status-tag {$comment.status == 1 ? 'active' : 'inactive'}">
+                            {$comment.status_text}
+                        </span>
+                    </button>
+                </td>
+                <td>{$comment.created_at}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline view-btn" data-id="{$comment.id}" title="查看详情">
+                            👁️ 详情
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="{$comment.id}" title="删除">
+                            🗑️ 删除
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {/volist}
+        </tbody>
+    </table>
+</div>
+
+<!-- 分页 -->
+{if $comments->hasPages()}
+<div class="pagination-wrapper">
+    <div class="pagination">
+        {if $comments->currentPage() > 1}
+        <a href="?{$comments->getOptions()['query']|http_build_query}&page={$comments->currentPage()-1}" class="page-link">上一页</a>
+        {/if}
+        
+        {for start="1" end="$comments->lastPage()"}
+        <a href="?{$comments->getOptions()['query']|http_build_query}&page={$i}" class="page-link {if $i == $comments->currentPage()}active{/if}">
+            {$i}
+        </a>
+        {/for}
+        
+        {if $comments->currentPage() < $comments->lastPage()}
+        <a href="?{$comments->getOptions()['query']|http_build_query}&page={$comments->currentPage()+1}" class="page-link">下一页</a>
+        {/if}
+        
+        <span class="page-info">共 {$comments->total()} 条记录</span>
+    </div>
+</div>
+{/if}
+
+<!-- 评论详情弹窗 -->
+<div class="modal" id="commentModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3>评论详情</h3>
+            <button class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <div class="modal-body" id="commentModalBody">
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="js"}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtns = document.querySelectorAll('.toggle-status-btn');
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    const viewBtns = document.querySelectorAll('.view-btn');
+    const commentModal = document.getElementById('commentModal');
+    const commentModalBody = document.getElementById('commentModalBody');
+    const closeModal = document.getElementById('closeModal');
+
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.id;
+            
+            fetch('/admin/post/toggleCommentStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + commentId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.id;
+            
+            if (!confirm('确定要删除这条评论吗？删除后无法恢复！')) {
+                return;
+            }
+            
+            fetch('/admin/post/deleteComment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id=' + commentId
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.msg);
+                if (result.code === 200) {
+                    window.location.reload();
+                }
+            });
+        });
+    });
+
+    viewBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.id;
+            
+            fetch('/admin/post/getComment?id=' + commentId, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.code === 200) {
+                    const comment = result.data;
+                    commentModalBody.innerHTML = `
+                        <div class="comment-detail">
+                            <div class="commenter-info">
+                                <img src="${comment.user.avatar || '/static/images/default-avatar.png'}" alt="头像">
+                                <div>
+                                    <p class="nickname">${comment.user.nickname}</p>
+                                    <p class="time">${comment.created_at}</p>
+                                </div>
+                            </div>
+                            ${comment.parent ? `<div class="reply-to">回复 @${comment.parent.user.nickname}："${comment.parent.content}"</div>` : ''}
+                            <div class="comment-content-detail">
+                                ${comment.content}
+                            </div>
+                            <div class="post-info">
+                                <p class="post-label">原帖：</p>
+                                <a href="/circle/detail?id=${comment.post.id}" target="_blank" class="post-title">${comment.post.title}</a>
+                            </div>
+                        </div>
+                    `;
+                    commentModal.classList.add('active');
+                }
+            });
+        });
+    });
+
+    closeModal.addEventListener('click', function() {
+        commentModal.classList.remove('active');
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === commentModal) {
+            commentModal.classList.remove('active');
+        }
+    });
+});
+</script>
+{/block}

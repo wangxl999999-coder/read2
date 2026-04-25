@@ -1,0 +1,151 @@
+{extend name="layout/base" /}
+
+{block name="title"}小说阅读网 - 在线阅读享受沉浸式体验{/block}
+
+{block name="css"}
+<link rel="stylesheet" href="/static/css/index.css">
+{/block}
+
+{block name="content"}
+<!-- 轮播横幅 -->
+<section class="banner-section">
+    <div class="container">
+        <div class="banner-wrapper">
+            <div class="banner-main">
+                <div class="banner-slider" id="bannerSlider">
+                    {volist name="recommendNovels" id="novel" length="3"}
+                    <div class="banner-slide">
+                        <div class="slide-content">
+                            <div class="slide-cover">
+                                <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}">
+                            </div>
+                            <div class="slide-info">
+                                <h2 class="slide-title">{$novel.title}</h2>
+                                <p class="slide-author">作者：{$novel.author}</p>
+                                <p class="slide-desc">{$novel.description|mb_substr=0,80,'utf-8'}...</p>
+                                <div class="slide-meta">
+                                    <span class="meta-item">📖 {$novel.category.name}</span>
+                                    <span class="meta-item">👁 {$novel.view_count}次阅读</span>
+                                    <span class="meta-item">{$novel.status_text}</span>
+                                </div>
+                                <div class="slide-actions">
+                                    <a href="/novel/detail?id={$novel.id}" class="btn btn-primary btn-lg">立即阅读</a>
+                                    <a href="/novel/chapters?id={$novel.id}" class="btn btn-outline btn-lg">查看目录</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {/volist}
+                </div>
+                <div class="slider-dots" id="sliderDots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 分类导航 -->
+<section class="category-section">
+    <div class="container">
+        <div class="section-header">
+            <h3 class="section-title">小说分类</h3>
+            <a href="/category" class="section-more">查看全部 →</a>
+        </div>
+        <div class="category-grid">
+            {volist name="categories" id="cat"}
+            <a href="/category?id={$cat.id}" class="category-card">
+                <div class="category-icon">
+                    {switch name="cat.id"}
+                    {case value="1"}✨{/case}
+                    {case value="2"}⚔️{/case}
+                    {case value="3"}❤️{/case}
+                    {case value="4"}🏰{/case}
+                    {case value="5"}🎮{/case}
+                    {case value="6"}👻{/case}
+                    {case value="7"}🎌{/case}
+                    {default /}📚
+                    {/switch}
+                </div>
+                <div class="category-info">
+                    <h4 class="category-name">{$cat.name}</h4>
+                    <p class="category-desc">精品小说推荐</p>
+                </div>
+            </a>
+            {/volist}
+        </div>
+    </div>
+</section>
+
+<!-- 最新更新 -->
+<section class="novel-section">
+    <div class="container">
+        <div class="section-header">
+            <h3 class="section-title">最新更新</h3>
+            <a href="/category" class="section-more">查看更多 →</a>
+        </div>
+        <div class="novel-grid">
+            {volist name="latestNovels" id="novel"}
+            <div class="novel-card">
+                <a href="/novel/detail?id={$novel.id}" class="novel-cover">
+                    <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}" loading="lazy">
+                    <div class="novel-status">{$novel.status_text}</div>
+                </a>
+                <div class="novel-info">
+                    <h4 class="novel-title">
+                        <a href="/novel/detail?id={$novel.id}">{$novel.title}</a>
+                    </h4>
+                    <p class="novel-author">{$novel.author}</p>
+                    <p class="novel-desc">{$novel.description|mb_substr=0,40,'utf-8'}...</p>
+                    <div class="novel-meta">
+                        <span class="meta-tag">{$novel.category.name}</span>
+                        <span class="meta-views">👁 {$novel.view_count}</span>
+                    </div>
+                </div>
+            </div>
+            {/volist}
+        </div>
+    </div>
+</section>
+
+<!-- 分类推荐 -->
+{volist name="categories" id="cat"}
+{if isset($categoryNovels[$cat.id]) && count($categoryNovels[$cat.id]) > 0}
+<section class="novel-section">
+    <div class="container">
+        <div class="section-header">
+            <h3 class="section-title">{$cat.name}推荐</h3>
+            <a href="/category?id={$cat.id}" class="section-more">查看更多 →</a>
+        </div>
+        <div class="novel-grid">
+            {volist name="categoryNovels[$cat.id]" id="novel"}
+            <div class="novel-card">
+                <a href="/novel/detail?id={$novel.id}" class="novel-cover">
+                    <img src="{$novel.cover|default='/static/images/default-cover.png'}" alt="{$novel.title}" loading="lazy">
+                    <div class="novel-status">{$novel.status_text}</div>
+                </a>
+                <div class="novel-info">
+                    <h4 class="novel-title">
+                        <a href="/novel/detail?id={$novel.id}">{$novel.title}</a>
+                    </h4>
+                    <p class="novel-author">{$novel.author}</p>
+                    <p class="novel-desc">{$novel.description|mb_substr=0,40,'utf-8'}...</p>
+                    <div class="novel-meta">
+                        <span class="meta-views">👁 {$novel.view_count}</span>
+                    </div>
+                </div>
+            </div>
+            {/volist}
+        </div>
+    </div>
+</section>
+{/if}
+{/volist}
+
+{/block}
+
+{block name="js"}
+<script src="/static/js/index.js"></script>
+{/block}
